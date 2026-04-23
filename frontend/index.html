@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Event Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #1a1a24;
+    --bg4: #22222f;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #f0f0f8;
+    --text2: #9898b0;
+    --text3: #5a5a70;
+    --accent: #6c63ff;
+    --accent2: #9b94ff;
+    --accent3: #3d35cc;
+    --green: #22c77a;
+    --amber: #f5a623;
+    --red: #e84040;
+    --blue: #4d9de0;
+    --radius: 12px;
+    --radius2: 8px;
+    --font: 'Syne', sans-serif;
+    --font2: 'DM Sans', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font2); min-height: 100vh; overflow-x: hidden; }
+
+  .page { display: none; min-height: 100vh; }
+  .page.active { display: flex; flex-direction: column; }
+
+  .navbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; background: rgba(10,10,15,0.95); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(12px); }
+  .nav-brand { font-family: var(--font); font-size: 20px; font-weight: 800; color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 10px; }
+  .nav-brand .dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+  .nav-links { display: flex; gap: 6px; align-items: center; flex: 1; margin-left: 32px; }
+  .nav-link { padding: 8px 16px; border-radius: var(--radius2); font-size: 14px; font-weight: 500; color: var(--text2); cursor: pointer; transition: all 0.2s; border: none; background: transparent; font-family: var(--font2); }
+  .nav-link:hover, .nav-link.active { color: var(--text); background: var(--bg3); }
+  .nav-right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+  .nav-user { font-size: 13px; color: var(--text2); }
+  .nav-user strong { color: var(--text); }
+  .role-pill { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--bg4); color: var(--text2); border: 1px solid var(--border); }
+  .role-pill.admin { background: rgba(108,99,255,0.15); color: var(--accent2); border-color: rgba(108,99,255,0.3); }
+  .role-pill.user { background: rgba(77,157,224,0.15); color: var(--blue); border-color: rgba(77,157,224,0.3); }
+  .btn-logout { padding: 7px 14px; border-radius: var(--radius2); font-size: 13px; font-weight: 500; color: var(--red); cursor: pointer; border: 1px solid rgba(232,64,64,0.3); background: rgba(232,64,64,0.1); font-family: var(--font2); transition: all 0.2s; }
+  .btn-logout:hover { background: rgba(232,64,64,0.2); }
+
+  .btn { padding: 10px 20px; border-radius: var(--radius2); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; font-family: var(--font2); display: inline-flex; align-items: center; gap: 8px; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-success { background: var(--green); color: #000; }
+  .btn-success:hover { background: #1fa86d; }
+  .btn-sm { padding: 6px 14px; font-size: 13px; }
+  .btn-outline { border: 1px solid var(--border2); background: transparent; color: var(--text); }
+  .btn-full { width: 100%; justify-content: center; padding: 13px; }
+
+  .form-group { margin-bottom: 18px; }
+  .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
+  .required::after { content: ' *'; color: var(--red); }
+  .form-input, select, textarea { width: 100%; padding: 11px 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius2); color: var(--text); font-size: 14px; font-family: var(--font2); outline: none; }
+  .form-input:focus, select:focus, textarea:focus { border-color: var(--accent); background: rgba(108,99,255,0.05); }
+  .form-input::placeholder { color: var(--text3); }
+  textarea { resize: vertical; min-height: 80px; }
+  .form-error { border-color: var(--red) !important; }
+  .error-msg { color: var(--red); font-size: 12px; margin-top: 4px; }
+  .radio-group, .checkbox-group { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 8px; }
+  .radio-item, .checkbox-item { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .radio-item input[type="radio"], .checkbox-item input[type="checkbox"] { cursor: pointer; width: 16px; height: 16px; accent-color: var(--accent); }
+
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+  .card-sm { padding: 16px; }
+
+  .badge { display: inline-flex; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .badge-green { background: rgba(34,199,122,0.15); color: var(--green); }
+  .badge-amber { background: rgba(245,166,35,0.15); color: var(--amber); }
+  .badge-red { background: rgba(232,64,64,0.15); color: var(--red); }
+  .badge-blue { background: rgba(77,157,224,0.15); color: var(--blue); }
+  .badge-purple { background: rgba(108,99,255,0.15); color: var(--accent2); }
+
+  .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); margin-top: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead tr { background: var(--bg3); }
+  th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; }
+  td { padding: 12px 16px; border-top: 1px solid var(--border); }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .main-content { flex: 1; padding: 28px 32px; overflow-y: auto; }
+  .content-header { margin-bottom: 28px; }
+  .content-header h2 { font-family: var(--font); font-size: 28px; font-weight: 700; }
+  .content-header p { color: var(--text2); font-size: 14px; margin-top: 4px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  @media(max-width: 768px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } .nav-links { flex-wrap: wrap; gap: 2px; } }
+
+  .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 40px 16px; background: var(--bg); position: relative; }
+  .auth-wrap::before { content:''; position:absolute; top:-200px; right:-200px; width:600px; height:600px; background: radial-gradient(circle, rgba(108,99,255,0.08) 0%, transparent 70%); border-radius:50%; pointer-events: none; }
+  .auth-card { width: 100%; max-width: 420px; position: relative; z-index: 1; }
+  .auth-logo { text-align: center; margin-bottom: 32px; }
+  .auth-logo h1 { font-family: var(--font); font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+  .auth-logo p { color: var(--text2); font-size: 14px; margin-top: 4px; }
+  .role-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .role-btn { padding: 12px 16px; border-radius: var(--radius2); font-size: 14px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg3); color: var(--text2); transition: all 0.2s; text-align: center; }
+  .role-btn.active, .role-btn:hover { border-color: var(--accent); color: var(--accent2); background: rgba(108,99,255,0.1); }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .modal-title { font-family: var(--font); font-size: 18px; font-weight: 700; }
+  .modal-close { width: 32px; height: 32px; border-radius: 6px; background: var(--bg3); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text2); font-size: 18px; }
+
+  .toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+  .toast { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius2); padding: 12px 18px; font-size: 14px; font-weight: 500; min-width: 260px; display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease; }
+  .toast.success { border-left: 3px solid var(--green); }
+  .toast.error { border-left: 3px solid var(--red); }
+  .toast.info { border-left: 3px solid var(--accent); }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .stat-label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; margin-bottom: 8px; }
+  .stat-value { font-family: var(--font); font-size: 32px; font-weight: 800; }
+
+  .mt-12 { margin-top: 12px; }
+  .mt-16 { margin-top: 16px; }
+  .mb-16 { margin-bottom: 16px; }
+  .mb-24 { margin-bottom: 24px; }
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--text2); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state h3 { font-family: var(--font); font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .flex { display: flex; }
+  .flex-between { display: flex; align-items: center; justify-content: space-between; }
+  .text-center { text-align: center; }
+  .text-sm { font-size: 13px; }
+  .text-muted { color: var(--text2); }
+  .gap-12 { gap: 12px; }
+</style>
+</head>
+<body>
+
+<!-- Toast Container -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ========== LOGIN PAGE ========== -->
+<div class="page active" id="pageLanding">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <h1>📋 Event Management</h1>
+        <p>Member & Maintenance System</p>
+      </div>
+
+      <div class="card mb-24">
+        <label class="form-label" style="text-align:center;margin-bottom:16px;font-weight:600;">Select Role</label>
+        <div class="role-btns">
+          <div class="role-btn active" onclick="selectRole('admin')" id="btnAdmin">👑 Admin</div>
+          <div class="role-btn" onclick="selectRole('user')" id="btnUser">👤 Member</div>
+        </div>
+      </div>
+
+      <div id="loginForm" class="card">
+        <div class="form-group">
+          <label class="form-label required">Email</label>
+          <input type="email" class="form-input" id="email" placeholder="user@example.com">
+          <div class="error-msg" id="emailErr"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label required">Password</label>
+          <input type="password" class="form-input" id="password" placeholder="••••••••">
+          <div class="error-msg" id="passwordErr"></div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="doLogin()">Login →</button>
+      </div>
+
+      <div style="text-align:center;margin-top:16px;font-size:12px;color:var(--text3);line-height:1.6;">
+        <strong>Demo Credentials:</strong><br>
+        Admin: admin@eventmgmt.com / Admin@123<br>
+        User: john@example.com / User@123
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== ADMIN PAGE ========== -->
+<div class="page" id="pageAdmin">
+  <nav class="navbar">
+    <div class="nav-brand" onclick="navigate('pageAdmin')"><div class="dot"></div>Event Management</div>
+    <div class="nav-links">
+      <span class="nav-link active" onclick="showAdminPage('dashboard', event)">Dashboard</span>
+      <span class="nav-link" onclick="showAdminPage('maintenance', event)">🔧 Maintenance</span>
+      <span class="nav-link" onclick="showAdminPage('reports', event)">📊 Reports</span>
+      <span class="nav-link" onclick="showAdminPage('members', event)">👥 Members</span>
+      <span class="nav-link" onclick="showAdminPage('membership', event)">🎫 Membership</span>
+      <span class="nav-link" onclick="showAdminPage('transactions', event)">💰 Transactions</span>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user">Welcome <strong id="adminName">Admin</strong></div>
+      <span class="role-pill admin">👑 Admin</span>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+  <div class="main-content" id="adminContent"></div>
+</div>
+
+<!-- ========== USER PAGE ========== -->
+<div class="page" id="pageUser">
+  <nav class="navbar">
+    <div class="nav-brand" onclick="navigate('pageUser')"><div class="dot"></div>Event Management</div>
+    <div class="nav-links">
+      <span class="nav-link active" onclick="showUserPage('dashboard', event)">Home</span>
+      <span class="nav-link" onclick="showUserPage('membership', event)">🎫 Membership</span>
+      <span class="nav-link" onclick="showUserPage('transactions', event)">💰 Transactions</span>
+      <span class="nav-link" onclick="showUserPage('profile', event)">👤 Profile</span>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user">Welcome <strong id="userName">User</strong></div>
+      <span class="role-pill user">👤 Member</span>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+  <div class="main-content" id="userContent"></div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle"></div>
+      <div class="modal-close" onclick="closeModal()">✕</div>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:8000/api';
+
+const state = {
+  role: 'admin',
+  token: localStorage.getItem('token'),
+  user: JSON.parse(localStorage.getItem('user') || '{"name":"Guest","email":"","id":null,"role":""}'),
+  currentPage: 'dashboard'
+};
+
+// ========== UTILITY FUNCTIONS ==========
+function toast(message, type = 'info') {
+  const toastWrap = document.getElementById('toastWrap');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  toastWrap.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+function navigate(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+}
+
+function selectRole(role) {
+  state.role = role;
+  document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById(`btn${role.charAt(0).toUpperCase() + role.slice(1)}`).classList.add('active');
+  document.getElementById('email').value = role === 'admin' ? 'admin@eventmgmt.com' : 'john@example.com';
+  document.getElementById('password').value = role === 'admin' ? 'Admin@123' : 'User@123';
+}
+
+function clearErrors() {
+  document.getElementById('emailErr').textContent = '';
+  document.getElementById('passwordErr').textContent = '';
+}
+
+function validateEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+async function doLogin() {
+  clearErrors();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!email) {
+    document.getElementById('emailErr').textContent = 'Email is required';
+    return;
+  }
+  if (!validateEmail(email)) {
+    document.getElementById('emailErr').textContent = 'Invalid email format';
+    return;
+  }
+  if (!password) {
+    document.getElementById('passwordErr').textContent = 'Password is required';
+    return;
+  }
+
+  try {
+    const endpoint = state.role === 'admin' ? '/auth/admin/login' : '/auth/user/login';
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      toast(data.detail || 'Login failed', 'error');
+      return;
+    }
+
+    state.token = data.access_token;
+    state.user = { name: data.name, email: data.email, id: data.user_id, role: state.role };
+    
+    localStorage.setItem('token', state.token);
+    localStorage.setItem('user', JSON.stringify(state.user));
+
+    toast(`Welcome ${state.user.name}!`, 'success');
+    
+    if (state.role === 'admin') {
+      document.getElementById('adminName').textContent = state.user.name;
+      navigate('pageAdmin');
+      showAdminPage('dashboard');
+    } else {
+      document.getElementById('userName').textContent = state.user.name;
+      navigate('pageUser');
+      showUserPage('dashboard');
+    }
+  } catch (error) {
+    toast(`Error: ${error.message}`, 'error');
+  }
+}
+
+function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  state.token = null;
+  state.user = {};
+  navigate('pageLanding');
+  toast('Logged out successfully', 'success');
+}
+
+async function apiCall(endpoint, options = {}) {
+  const url = `${API_BASE}${endpoint}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers
+  };
+
+  if (state.token) {
+    headers['Authorization'] = `Bearer ${state.token}`;
+  }
+
+  try {
+    const response = await fetch(url, { ...options, headers });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.detail || `API Error: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('API Error:', error);
+    return null;
+  }
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+
+// ========== ADMIN PAGES ==========
+
+function showAdminPage(page, event) {
+  state.currentPage = page;
+  const content = document.getElementById('adminContent');
+  
+  document.querySelectorAll('#pageAdmin .nav-link').forEach(link => link.classList.remove('active'));
+  if (event && event.target) {
+    const navLink = event.target.closest('.nav-link');
+    if (navLink) navLink.classList.add('active');
+  }
+
+  if (page === 'dashboard') {
+    loadAdminDashboard();
+  } else if (page === 'maintenance') {
+    loadMaintenancePage();
+  } else if (page === 'reports') {
+    loadReportsPage();
+  } else if (page === 'members') {
+    loadMembersPage();
+  } else if (page === 'membership') {
+    loadMembershipManagementPage();
+  } else if (page === 'transactions') {
+    loadTransactionsPage();
+  }
+}
+
+function loadAdminDashboard() {
+  const content = document.getElementById('adminContent');
+  content.innerHTML = `
+    <div class="content-header">
+      <h2>Admin Dashboard</h2>
+      <p>Overview of system activities and statistics</p>
+    </div>
+
+    <div class="grid-4">
+      <div class="stat-card">
+        <div class="stat-label">Total Users</div>
+        <div class="stat-value">1,234</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Members</div>
+        <div class="stat-value">856</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Revenue</div>
+        <div class="stat-value">$45,230</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pending Orders</div>
+        <div class="stat-value">23</div>
+      </div>
+    </div>
+
+    <div class="grid-2 mt-16">
+      <div class="card">
+        <h3 style="font-family: var(--font); margin-bottom: 16px;">Membership Status</h3>
+        <div style="font-size: 13px; line-height: 2;">
+          <div>🟢 Active: <strong style="color: var(--green);">856</strong></div>
+          <div>🟡 Expired: <strong style="color: var(--amber);">45</strong></div>
+          <div>🔴 Cancelled: <strong style="color: var(--red);">12</strong></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="font-family: var(--font); margin-bottom: 16px;">Recent Activity</h3>
+        <div style="font-size: 13px; line-height: 2; color: var(--text2);">
+          <div>• 5 new members added today</div>
+          <div>• 12 transactions completed</div>
+          <div>• 3 maintenance tasks pending</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function loadMaintenancePage() {
+  const content = document.getElementById('adminContent');
+  content.innerHTML = `
+    <div class="content-header">
+      <h2>🔧 System Maintenance</h2>
+      <p>System health and maintenance tools (Admin only)</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3 style="font-family: var(--font); margin-bottom: 16px;">System Status</h3>
+        <div class="mt-12">
+          <div style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span>Database</span>
+              <span style="color: var(--green);">🟢 Connected</span>
+            </div>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span>API Server</span>
+              <span style="color: var(--green);">🟢 Running</span>
+            </div>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span>Frontend</span>
+              <span style="color: var(--green);">🟢 Active</span>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-outline mt-16" onclick="refreshSystemStatus()">Refresh Status</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-family: var(--font); margin-bottom: 16px;">Maintenance Tools</h3>
+        <div class="mt-12">
+          <button class="btn btn-sm btn-primary btn-full mb-16" onclick="checkExpiredMemberships()">Check Expired Memberships</button>
+          <button class="btn btn-sm btn-outline btn-full mb-16" onclick="backupDatabase()">Backup Database</button>
+          <button class="btn btn-sm btn-outline btn-full" onclick="clearLogs()">Clear Logs</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-16">
+      <h3 style="font-family: var(--font); margin-bottom: 16px;">System Information</h3>
+      <table style="width: 100%; font-size: 13px;">
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 8px 0;">Last Backup</td>
+          <td style="text-align: right;">2 hours ago</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 8px 0;">Database Size</td>
+          <td style="text-align: right;">2.3 MB</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 8px 0;">Active Sessions</td>
+          <td style="text-align: right;">45</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0;">Uptime</td>
+          <td style="text-align: right;">28 days 14h</td>
+        </tr>
+      </table>
+    </div>
+  `;
+}
+
+function loadReportsPage() {
+  const content = document.getElementById('adminContent');
+  content.innerHTML = `
+    <div class="content-header">
+      <h2>📊 Reports</h2>
+      <p>Membership and transaction reports</p>
+    </div>
+
+    <div class="card mb-24">
+      <h3 style="font-family: var(--font); margin-bottom: 16px;">Membership Report</h3>
+      <div class="grid-3 mt-12">
+        <div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 4px;">6 Months</div>
+          <div style="font-family: var(--font); font-size: 24px; font-weight: 700;">342</div>
+        </div>
+        <div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 4px;">1 Year</div>
+          <div style="font-family: var(--font); font-size: 24px; font-weight: 700;">456</div>
+        </div>
+        <div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 4px;">2 Years</div>
+          <div style="font-family: var(--font); font-size: 24px; font-weight: 700;">289</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="font-family: var(--font); margin-bottom: 16px;">Transaction Summary</h3>
+      <div class="grid-3 mt-12">
+        <div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 4px;">Completed</div>
+          <div style="font-family: var(--font); font-size: 24px; font-weight: 700; color: var(--green);">1,245</div>
+        </div>
+        <div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 4px;">Pending</div>
+          <div style="font-family: var(--font); font-size: 24px; font-weight: 700; color: var(--amber);">23</div>
+        </div>
+        <div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 4px;">Failed</div>
+          <div style="font-family: var(--font); font-size: 24px; font-weight: 700; color: var(--red);">5</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-16">
+      <h3 style="font-family: var(--font); margin-bottom: 16px;">Generate Custom Report</h3>
+      <div class="grid-2 mt-12">
+        <div class="form-group">
+          <label class="form-label">Start Date</label>
+          <input type="date" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">End Date</label>
+          <input type="date" class="form-input">
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full mt-12" onclick="generateReport()">Generate Report</button>
+    </div>
+  `;
+}
+
+function loadMembersPage() {
+  const content = document.getElementById('adminContent');
+  content.innerHTML = `
+    <div class="content-header">
+      <h2>👥 Member Management</h2>
+      <p>View and manage all members</p>
+    </div>
+
+    <div class="card">
+      <div class="flex-between mb-16">
+        <h3 style="font-family: var(--font);">All Members</h3>
+        <input type="text" class="form-input" placeholder="Search members..." style="width: 200px;">
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Membership</th>
+              <th>Status</th>
+              <th>Joined</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>John Doe</td>
+              <td>john@example.com</td>
+              <td><span class="badge badge-green">1 Year</span></td>
+              <td><span class="badge badge-green">Active</span></td>
+              <td>Jan 15, 2024</td>
+              <td><button class="btn btn-sm btn-outline">View</button></td>
+            </tr>
+            <tr>
+              <td>Jane Smith</td>
+              <td>jane@example.com</td>
+              <td><span class="badge badge-blue">6 Months</span></td>
+              <td><span class="badge badge-green">Active</span></td>
+              <td>Feb 20, 2024</td>
+              <td><button class="btn btn-sm btn-outline">View</button></td>
+            </tr>
+            <tr>
+              <td>Mike Johnson</td>
+              <td>mike@example.com</td>
+              <td><span class="badge badge-amber">2 Years</span></td>
+              <td><span class="badge badge-amber">Expiring Soon</span></td>
+              <td>Mar 10, 2024</td>
+              <td><button class="btn btn-sm btn-outline">View</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function loadMembershipManagementPage() {
+  const content = document.getElementById('adminContent');
+  content.innerHTML = `
+    <div class="content-header">
+      <h2>🎫 Membership Management</h2>
+      <p>Add or update member memberships</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3 style="font-family: var(--font); margin-bottom: 16px;">Add New Membership</h3>
+        <div class="form-group">
+          <label class="form-label required">Member Email</label>
+          <input type="email" class="form-input" id="memberEmail" placeholder="member@example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label required">Membership Duration</label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="membershipDuration" value="6_months" checked>
+              6 Months
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="membershipDuration" value="1_year">
+              1 Year
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="membershipDuration" value="2_years">
+              2 Years
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label required">Amount Paid</label>
+          <input type="number" class="form-input" id="membershipAmount" placeholder="0.00" step="0.01">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="addMembership()">Add Membership</button>
+      </div>
+
+      <div class="card">
+        <h3 style="font-family: var(--font); margin-bottom: 16px;">Update Membership</h3>
+        <div class="form-group">
+          <label class="form-label required">Membership Number</label>
+          <input type="text" class="form-input" id="membershipNumber" placeholder="MEM-XXXXXXXXX">
+        </div>
+        <div class="form-group">
+          <label class="form-label required">Extend By</label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="extendDuration" value="6_months" checked>
+              6 Months
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="extendDuration" value="1_year">
+              1 Year
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="extendDuration" value="2_years">
+              2 Years
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label required">New Amount</label>
+          <input type="number" class="form-input" id="extensionAmount" placeholder="0.00" step="0.01">
+        </div>
+        <button class="btn btn-success btn-full" onclick="extendMembership()">Extend Membership</button>
+      </div>
+    </div>
+
+    <div class="card mt-16">
+      <h3 style="font-family: var(--font); margin-bottom: 16px;">Recent Memberships</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Membership #</th>
+              <th>Member</th>
+              <th>Duration</th>
+              <th>Start Date</th>
+              <th>Expiry</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>MEM-A1B2C3D4E5F6</td>
+              <td>John Doe</td>
+              <td>1 Year</td>
+              <td>Jan 15, 2024</td>
+              <td>Jan 15, 2025</td>
+              <td><span class="badge badge-green">Active</span></td>
+            </tr>
+            <tr>
+              <td>MEM-X9Y8Z7W6V5U4</td>
+              <td>Jane Smith</td>
+              <td>6 Months</td>
+              <td>Feb 20, 2024</td>
+              <td>Aug 20, 2024</td>
+              <td><span class="badge badge-green">Active</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function loadTransactionsPage() {
+  const content = document.getElementById('adminContent');
+  content.innerHTML = `
+    <div class="content-header">
+      <h2>💰 Transactions</h2>
+      <p>View all system transactions</p>
+    </div>
+
+    <div class="card mb-24">
+      <div class="grid-4">
+        <div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 4px;">Total Revenue</div>
+          <div style="font-family: var(--font); font-size: 24px; font-weight: 700;">$45,230.50</div>
+        </div>
+        <div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 4px;">Completed</div>
+          <div style="font-family: var(--font); font-size: 24px; font-weight: 700; color: var(--green);">1,245</div>
+        </div>
+        <div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 4px;">Pending</div>
+          <div style="font-family: var(--font); font-size: 24px; font-weight: 700; color: var(--amber);">23</div>
+        </div>
+        <div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 4px;">Failed</div>
+          <div style="font-family: var(--font); font-size: 24px; font-weight: 700; color: var(--red);">5</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="font-family: var(--font); margin-bottom: 16px;">Transaction List</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Transaction ID</th>
+              <th>User</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>TXN-001234</td>
+              <td>John Doe</td>
+              <td>Membership Purchase</td>
+              <td>$99.99</td>
+              <td><span class="badge badge-green">Completed</span></td>
+              <td>Apr 20, 2024</td>
+            </tr>
+            <tr>
+              <td>TXN-001235</td>
+              <td>Jane Smith</td>
+              <td>Order Payment</td>
+              <td>$49.50</td>
+              <td><span class="badge badge-green">Completed</span></td>
+              <td>Apr 20, 2024</td>
+            </tr>
+            <tr>
+              <td>TXN-001236</td>
+              <td>Mike Johnson</td>
+              <td>Membership Purchase</td>
+              <td>$199.99</td>
+              <td><span class="badge badge-amber">Pending</span></td>
+              <td>Apr 21, 2024</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ========== USER PAGES ==========
+
+function showUserPage(page, event) {
+  state.currentPage = page;
+  const content = document.getElementById('userContent');
+
+  document.querySelectorAll('#pageUser .nav-link').forEach(link => link.classList.remove('active'));
+  if (event && event.target) {
+    const navLink = event.target.closest('.nav-link');
+    if (navLink) navLink.classList.add('active');
+  }
+
+  if (page === 'dashboard') {
+    loadUserDashboard();
+  } else if (page === 'membership') {
+    loadUserMembershipPage();
+  } else if (page === 'transactions') {
+    loadUserTransactionsPage();
+  } else if (page === 'profile') {
+    loadUserProfilePage();
+  }
+}
+
+function loadUserDashboard() {
+  const content = document.getElementById('userContent');
+  content.innerHTML = `
+    <div class="content-header">
+      <h2>Welcome back, ${state.user.name}!</h2>
+      <p>Manage your membership and account</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="stat-card">
+        <div class="stat-label">Membership Status</div>
+        <div class="stat-value" style="color: var(--green);">✓ Active</div>
+        <div style="font-size: 12px; color: var(--text2); margin-top: 8px;">Expires: Jan 15, 2025</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Membership Type</div>
+        <div class="stat-value" style="font-size: 24px;">1 Year</div>
+        <div style="font-size: 12px; color: var(--text2); margin-top: 8px;">Premium Plan</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Transactions</div>
+        <div class="stat-value">12</div>
+        <div style="font-size: 12px; color: var(--text2); margin-top: 8px;">This year</div>
+      </div>
+    </div>
+
+    <div class="grid-2 mt-16">
+      <div class="card">
+        <h3 style="font-family: var(--font); margin-bottom: 16px;">Quick Actions</h3>
+        <button class="btn btn-primary btn-full mb-12" onclick="showUserPage('membership')">Manage Membership</button>
+        <button class="btn btn-outline btn-full mb-12" onclick="showUserPage('transactions')">View Transactions</button>
+        <button class="btn btn-outline btn-full" onclick="showUserPage('profile')">Edit Profile</button>
+      </div>
+      <div class="card">
+        <h3 style="font-family: var(--font); margin-bottom: 16px;">Recent Activity</h3>
+        <div style="font-size: 13px; line-height: 2; color: var(--text2);">
+          <div>• Membership renewed on Apr 20, 2024</div>
+          <div>• Transaction completed on Apr 19, 2024</div>
+          <div>• Profile updated on Apr 18, 2024</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function loadUserMembershipPage() {
+  const content = document.getElementById('userContent');
+  content.innerHTML = `
+    <div class="content-header">
+      <h2>🎫 Your Membership</h2>
+      <p>Manage your membership plan</p>
+    </div>
+
+    <div class="card mb-24">
+      <div class="flex-between mb-16">
+        <div>
+          <h3 style="font-family: var(--font); margin-bottom: 8px;">Current Membership</h3>
+          <p style="color: var(--text2); font-size: 14px;">MEM-A1B2C3D4E5F6</p>
+        </div>
+        <span class="badge badge-green" style="height: fit-content;">ACTIVE</span>
+      </div>
+
+      <div class="grid-3">
+        <div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 4px;">Type</div>
+          <div style="font-family: var(--font); font-size: 20px; font-weight: 700;">1 Year</div>
+        </div>
+        <div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 4px;">Start Date</div>
+          <div style="font-family: var(--font); font-size: 20px; font-weight: 700;">Jan 15, 2024</div>
+        </div>
+        <div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 4px;">Expiry Date</div>
+          <div style="font-family: var(--font); font-size: 20px; font-weight: 700; color: var(--amber);">Jan 15, 2025</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="font-family: var(--font); margin-bottom: 16px;">Upgrade Membership</h3>
+      <div class="grid-3 mt-12 gap-12">
+        <div style="border: 1px solid var(--border); border-radius: var(--radius2); padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size: 24px; margin-bottom: 8px;">📅</div>
+          <div style="font-weight: 600; margin-bottom: 4px;">6 Months</div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 12px;">$49.99</div>
+          <button class="btn btn-sm btn-outline btn-full">Select</button>
+        </div>
+        <div style="border: 2px solid var(--accent); border-radius: var(--radius2); padding: 20px; text-align: center; background: rgba(108,99,255,0.05);">
+          <div style="font-size: 24px; margin-bottom: 8px;">⭐</div>
+          <div style="font-weight: 600; margin-bottom: 4px;">1 Year</div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 12px;">$99.99 <span style="color: var(--green);">Current</span></div>
+          <button class="btn btn-sm btn-outline btn-full" disabled>Current Plan</button>
+        </div>
+        <div style="border: 1px solid var(--border); border-radius: var(--radius2); padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size: 24px; margin-bottom: 8px;">🎁</div>
+          <div style="font-weight: 600; margin-bottom: 4px;">2 Years</div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 12px;">$199.99</div>
+          <button class="btn btn-sm btn-primary btn-full">Upgrade</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function loadUserTransactionsPage() {
+  const content = document.getElementById('userContent');
+  content.innerHTML = `
+    <div class="content-header">
+      <h2>💰 Your Transactions</h2>
+      <p>View all your payment history</p>
+    </div>
+
+    <div class="card mb-24">
+      <div class="grid-3">
+        <div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 4px;">Total Spent</div>
+          <div style="font-family: var(--font); font-size: 24px; font-weight: 700;">$749.98</div>
+        </div>
+        <div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 4px;">Completed</div>
+          <div style="font-family: var(--font); font-size: 24px; font-weight: 700; color: var(--green);">12</div>
+        </div>
+        <div>
+          <div style="color: var(--text2); font-size: 12px; margin-bottom: 4px;">Pending</div>
+          <div style="font-family: var(--font); font-size: 24px; font-weight: 700; color: var(--amber);">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="font-family: var(--font); margin-bottom: 16px;">Transaction History</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Type</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Apr 20, 2024</td>
+              <td>Membership Renewal</td>
+              <td>$99.99</td>
+              <td>Membership</td>
+              <td><span class="badge badge-green">Completed</span></td>
+            </tr>
+            <tr>
+              <td>Oct 15, 2023</td>
+              <td>Annual Membership</td>
+              <td>$99.99</td>
+              <td>Membership</td>
+              <td><span class="badge badge-green">Completed</span></td>
+            </tr>
+            <tr>
+              <td>Aug 22, 2023</td>
+              <td>Order #ORD-12345</td>
+              <td>$199.99</td>
+              <td>Order Payment</td>
+              <td><span class="badge badge-green">Completed</span></td>
+            </tr>
+            <tr>
+              <td>Jun 10, 2023</td>
+              <td>Initial Membership</td>
+              <td>$99.99</td>
+              <td>Membership</td>
+              <td><span class="badge badge-green">Completed</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function loadUserProfilePage() {
+  const content = document.getElementById('userContent');
+  content.innerHTML = `
+    <div class="content-header">
+      <h2>👤 Your Profile</h2>
+      <p>Manage your account information</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3 style="font-family: var(--font); margin-bottom: 16px;">Personal Information</h3>
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" class="form-input" value="${state.user.name}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" value="${state.user.email}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input type="tel" class="form-input" placeholder="+1 (555) 000-0000">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="saveProfile()">Save Changes</button>
+      </div>
+
+      <div class="card">
+        <h3 style="font-family: var(--font); margin-bottom: 16px;">Change Password</h3>
+        <div class="form-group">
+          <label class="form-label">Current Password</label>
+          <input type="password" class="form-input" placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <input type="password" class="form-input" placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <input type="password" class="form-input" placeholder="••••••••">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="changePassword()">Update Password</button>
+      </div>
+    </div>
+
+    <div class="card mt-16">
+      <h3 style="font-family: var(--font); margin-bottom: 16px;">Account Settings</h3>
+      <div style="padding: 16px 0;">
+        <div class="flex-between mb-16" style="border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+          <div>
+            <div style="font-weight: 600;">Email Notifications</div>
+            <div style="font-size: 13px; color: var(--text2);">Receive updates about membership and transactions</div>
+          </div>
+          <input type="checkbox" checked style="width: 20px; height: 20px; accent-color: var(--accent);">
+        </div>
+        <div class="flex-between" style="border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+          <div>
+            <div style="font-weight: 600;">SMS Notifications</div>
+            <div style="font-size: 13px; color: var(--text2);">Get SMS alerts for important updates</div>
+          </div>
+          <input type="checkbox" style="width: 20px; height: 20px; accent-color: var(--accent);">
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ========== ACTION FUNCTIONS ==========
+function addMembership() {
+  const email = document.getElementById('memberEmail').value;
+  const duration = document.querySelector('input[name="membershipDuration"]:checked').value;
+  const amount = document.getElementById('membershipAmount').value;
+
+  if (!email || !amount) {
+    toast('Please fill all required fields', 'error');
+    return;
+  }
+
+  toast('Membership added successfully!', 'success');
+  document.getElementById('memberEmail').value = '';
+  document.getElementById('membershipAmount').value = '';
+}
+
+function extendMembership() {
+  const membershipNum = document.getElementById('membershipNumber').value;
+  const duration = document.querySelector('input[name="extendDuration"]:checked').value;
+  const amount = document.getElementById('extensionAmount').value;
+
+  if (!membershipNum || !amount) {
+    toast('Please fill all required fields', 'error');
+    return;
+  }
+
+  toast('Membership extended successfully!', 'success');
+  document.getElementById('membershipNumber').value = '';
+  document.getElementById('extensionAmount').value = '';
+}
+
+function saveProfile() {
+  toast('Profile updated successfully!', 'success');
+}
+
+function changePassword() {
+  toast('Password changed successfully!', 'success');
+}
+
+function generateReport() {
+  toast('Report generated and ready to download', 'success');
+}
+
+function refreshSystemStatus() {
+  toast('System status refreshed', 'info');
+}
+
+function checkExpiredMemberships() {
+  toast('Expired memberships checked and updated', 'success');
+}
+
+function backupDatabase() {
+  toast('Database backup completed', 'success');
+}
+
+function clearLogs() {
+  toast('Logs cleared successfully', 'success');
+}
+
+// Initialize on page load
+selectRole('admin');
+</script>
+</body>
+</html>
